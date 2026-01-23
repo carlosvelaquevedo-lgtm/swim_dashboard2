@@ -1,7 +1,8 @@
 streamlit>=1.41.0
-opencv-python-headless>=4.10.0.84
+opencv-python-headless>=4.10.0
 mediapipe>=0.10.14
 numpy>=1.26.0
 pandas>=2.2.0
 matplotlib>=3.9.0
 reportlab>=4.2.0
+
