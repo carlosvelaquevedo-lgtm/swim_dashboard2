@@ -11,6 +11,8 @@ Original file is located at
 
 # -*- coding: utf-8 -*-
 """
+# -*- coding: utf-8 -*-
+"""
 🏊 Enhanced Freestyle Swimming Technique Analyzer
 Professional-grade biomechanical analysis with advanced metrics
 """
@@ -43,13 +45,12 @@ import urllib.request
 import zipfile
 
 
-# ═══════════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────────
 # DATA STRUCTURES
-# ═══════════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────────
 
 @dataclass
 class AnalysisConfig:
-    """Configuration parameters for analysis"""
     smoothing_window: int = 7
     elbow_min_window: int = 9
     elbow_min_prominence: float = 10.0
@@ -66,7 +67,6 @@ class AnalysisConfig:
 
 @dataclass
 class FrameMetrics:
-    """Metrics computed for a single frame"""
     time_s: float
     elbow_angle: float
     knee_left: float
@@ -81,7 +81,6 @@ class FrameMetrics:
 
 @dataclass
 class SessionSummary:
-    """Summary statistics for entire session"""
     duration_s: float
     avg_score: float
     avg_symmetry: float
@@ -97,12 +96,11 @@ class SessionSummary:
     worst_frame_time: Optional[float] = None
 
 
-# ═══════════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────────
 # GEOMETRY & ANALYSIS FUNCTIONS
-# ═══════════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────────
 
 def calculate_angle(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> float:
-    """Calculate angle at point b formed by points a-b-c"""
     ba = a - b
     bc = c - b
     cosine = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-8)
@@ -110,7 +108,6 @@ def calculate_angle(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> float:
 
 
 def calculate_deviation(value: float, ideal_range: Tuple[float, float]) -> float:
-    """Calculate how far a value deviates from ideal range"""
     low, high = ideal_range
     if value < low:
         return low - value
@@ -120,7 +117,6 @@ def calculate_deviation(value: float, ideal_range: Tuple[float, float]) -> float
 
 
 def detect_local_minimum(window: List[float], prominence: float = 10.0) -> Tuple[bool, Optional[float]]:
-    """Detect if center of window is a local minimum"""
     if len(window) < 3:
         return False, None
     
@@ -135,7 +131,6 @@ def detect_local_minimum(window: List[float], prominence: float = 10.0) -> Tuple
 
 def calculate_yaw_proxy(nose: np.ndarray, left_shoulder: np.ndarray, 
                         right_shoulder: np.ndarray) -> float:
-    """Estimate head rotation (yaw) from landmark positions"""
     dx = right_shoulder[0] - left_shoulder[0]
     if abs(dx) < 1e-6:
         return 0.0
@@ -145,7 +140,6 @@ def calculate_yaw_proxy(nose: np.ndarray, left_shoulder: np.ndarray,
 
 
 def calculate_shoulder_roll(left_shoulder: np.ndarray, right_shoulder: np.ndarray) -> float:
-    """Calculate body roll angle from shoulder positions"""
     dy = left_shoulder[1] - right_shoulder[1]
     dx = left_shoulder[0] - right_shoulder[0]
     
@@ -157,7 +151,6 @@ def calculate_shoulder_roll(left_shoulder: np.ndarray, right_shoulder: np.ndarra
 
 def calculate_technique_score(elbow_dev: float, symmetry: float, 
                               knee_left_dev: float, knee_right_dev: float) -> float:
-    """Calculate overall technique score (0-100)"""
     raw_penalty = (
         elbow_dev * 0.4 + 
         symmetry * 0.3 + 
@@ -166,13 +159,11 @@ def calculate_technique_score(elbow_dev: float, symmetry: float,
     return max(0.0, min(100.0, 100.0 - raw_penalty))
 
 
-# ═══════════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────────
 # VIDEO PROCESSING
-# ═══════════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────────
 
 class SwimAnalyzer:
-    """Main analyzer class for processing swimming videos"""
-    
     # MediaPipe landmark indices
     NOSE, L_SHOULDER, R_SHOULDER = 0, 11, 12
     L_ELBOW, L_WRIST = 13, 15
@@ -184,7 +175,6 @@ class SwimAnalyzer:
         self.is_underwater = is_underwater
         self.detector = self._initialize_detector()
         
-        # Data storage
         self.frame_metrics: List[FrameMetrics] = []
         self.stroke_times: List[float] = []
         self.best_frame_bytes: Optional[bytes] = None
@@ -192,16 +182,13 @@ class SwimAnalyzer:
         self.best_frame_deviation = float('inf')
         self.worst_frame_deviation = -float('inf')
         
-        # Smoothing buffers
         self.elbow_buffer = deque(maxlen=config.smoothing_window)
         self.knee_left_buffer = deque(maxlen=config.smoothing_window)
         self.knee_right_buffer = deque(maxlen=config.smoothing_window)
         
-        # Stroke detection
         self.elbow_window = deque(maxlen=config.elbow_min_window)
         self.time_window = deque(maxlen=config.elbow_min_window)
         
-        # Breathing detection
         self.breath_count_left = 0
         self.breath_count_right = 0
         self.current_breath_side = 'N'
@@ -209,7 +196,6 @@ class SwimAnalyzer:
         self.last_breath_time = -1e9
     
     def _initialize_detector(self) -> vision.PoseLandmarker:
-        """Initialize MediaPipe pose detector"""
         model_path = "pose_landmarker_heavy.task"
         
         if not os.path.exists(model_path):
@@ -233,7 +219,6 @@ class SwimAnalyzer:
         return vision.PoseLandmarker.create_from_options(options)
     
     def _extract_landmarks(self, landmarks, frame_shape: Tuple[int, int]) -> dict:
-        """Extract and convert landmarks to pixel coordinates"""
         height, width = frame_shape
         
         def to_pixel(idx: int) -> np.ndarray:
@@ -255,15 +240,12 @@ class SwimAnalyzer:
         }
     
     def _compute_frame_angles(self, lm: dict) -> Tuple[float, float, float]:
-        """Compute joint angles for current frame"""
         elbow = calculate_angle(lm['left_shoulder'], lm['left_elbow'], lm['left_wrist'])
         knee_left = calculate_angle(lm['left_hip'], lm['left_knee'], lm['left_ankle'])
         knee_right = calculate_angle(lm['right_hip'], lm['right_knee'], lm['right_ankle'])
-        
         return elbow, knee_left, knee_right
     
     def _smooth_angles(self, elbow: float, knee_left: float, knee_right: float) -> Tuple[float, float, float]:
-        """Apply temporal smoothing to angles"""
         self.elbow_buffer.append(elbow)
         self.knee_left_buffer.append(knee_left)
         self.knee_right_buffer.append(knee_right)
@@ -275,7 +257,6 @@ class SwimAnalyzer:
         return elbow_smooth, knee_left_smooth, knee_right_smooth
     
     def _detect_stroke(self, elbow_angle: float, time_s: float) -> bool:
-        """Detect stroke completion using elbow angle minimum"""
         self.elbow_window.append(elbow_angle)
         self.time_window.append(time_s)
         
@@ -299,7 +280,6 @@ class SwimAnalyzer:
         return False
     
     def _detect_breathing(self, yaw: float, time_s: float) -> str:
-        """Detect breathing events from head rotation"""
         if yaw > self.config.breath_side_threshold:
             desired_side = 'R'
         elif yaw < -self.config.breath_side_threshold:
@@ -328,10 +308,8 @@ class SwimAnalyzer:
     
     def _annotate_frame(self, frame: np.ndarray, lm: dict, metrics: FrameMetrics,
                         stroke_rate: float, breathing_rate: float) -> np.ndarray:
-        """Draw annotations on frame"""
         annotated = frame.copy()
         
-        # Determine colors based on deviations
         ideal_knee = (self.config.ideal_knee_underwater if self.is_underwater 
                      else self.config.ideal_knee_surface)
         
@@ -343,7 +321,6 @@ class SwimAnalyzer:
         leg_l_color = self._deviation_to_color(knee_l_dev)
         leg_r_color = self._deviation_to_color(knee_r_dev)
         
-        # Draw skeleton
         skeleton_lines = [
             (lm['left_shoulder'], lm['left_elbow'], arm_color),
             (lm['left_elbow'], lm['left_wrist'], arm_color),
@@ -358,7 +335,6 @@ class SwimAnalyzer:
             cv2.circle(annotated, tuple(start.astype(int)), 5, color, -1)
             cv2.circle(annotated, tuple(end.astype(int)), 5, color, -1)
         
-        # Draw metrics overlay
         y_pos = 30
         font = cv2.FONT_HERSHEY_SIMPLEX
         
@@ -378,17 +354,15 @@ class SwimAnalyzer:
     
     @staticmethod
     def _deviation_to_color(deviation: float) -> Tuple[int, int, int]:
-        """Convert deviation value to BGR color"""
         if deviation <= 10:
-            return (0, 255, 0)  # Green
+            return (0, 255, 0)
         elif deviation <= 20:
-            return (0, 255, 255)  # Yellow
+            return (0, 255, 255)
         else:
-            return (0, 0, 255)  # Red
+            return (0, 0, 255)
     
     def process_video(self, input_path: str, output_path: str, 
                      progress_callback=None) -> SessionSummary:
-        """Process entire video and generate annotated output"""
         cap = cv2.VideoCapture(input_path)
         if not cap.isOpened():
             raise RuntimeError("Cannot open video file")
@@ -422,7 +396,6 @@ class SwimAnalyzer:
                 time_s = frame_id / fps
                 time_ms = int(time_s * 1000)
                 
-                # Detect pose
                 mp_image = mp.Image(
                     image_format=mp.ImageFormat.SRGB,
                     data=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -433,14 +406,11 @@ class SwimAnalyzer:
                     writer.write(frame)
                     continue
                 
-                # Extract landmarks
                 lm = self._extract_landmarks(result.pose_landmarks[0], (height, width))
                 
-                # Compute angles
                 elbow, knee_left, knee_right = self._compute_frame_angles(lm)
                 elbow_s, knee_left_s, knee_right_s = self._smooth_angles(elbow, knee_left, knee_right)
                 
-                # Calculate metrics
                 body_roll = calculate_shoulder_roll(lm['left_shoulder'], lm['right_shoulder'])
                 yaw = calculate_yaw_proxy(lm['nose'], lm['left_shoulder'], lm['right_shoulder'])
                 
@@ -451,10 +421,8 @@ class SwimAnalyzer:
                 
                 score = calculate_technique_score(elbow_dev, symmetry, knee_l_dev, knee_r_dev)
                 
-                # Determine phase
                 phase = 'Pull' if lm['left_wrist'][1] > lm['left_shoulder'][1] else 'Recovery'
                 
-                # Track best/worst frames during pull phase
                 if phase == 'Pull':
                     elbow_ideal_center = statistics.mean(self.config.ideal_elbow)
                     current_dev = abs(elbow_s - elbow_ideal_center)
@@ -469,11 +437,9 @@ class SwimAnalyzer:
                         _, buffer = cv2.imencode('.jpg', frame)
                         self.worst_frame_bytes = buffer.tobytes()
                 
-                # Detect strokes and breathing
                 self._detect_stroke(elbow_s, time_s)
                 breath_state = self._detect_breathing(yaw, time_s)
                 
-                # Store metrics
                 metrics = FrameMetrics(
                     time_s=time_s,
                     elbow_angle=elbow_s,
@@ -488,11 +454,9 @@ class SwimAnalyzer:
                 )
                 self.frame_metrics.append(metrics)
                 
-                # Calculate current rates
                 stroke_rate = self._calculate_current_stroke_rate()
                 breathing_rate = self._calculate_current_breathing_rate(time_s)
                 
-                # Annotate and write frame
                 annotated = self._annotate_frame(frame, lm, metrics, stroke_rate, breathing_rate)
                 writer.write(annotated)
         
@@ -503,7 +467,6 @@ class SwimAnalyzer:
         return self._generate_summary()
     
     def _calculate_current_stroke_rate(self) -> float:
-        """Calculate current stroke rate in strokes per minute"""
         if len(self.stroke_times) < 2:
             return 0.0
         
@@ -514,14 +477,11 @@ class SwimAnalyzer:
         return 60.0 * (len(self.stroke_times) - 1) / duration
     
     def _calculate_current_breathing_rate(self, current_time: float) -> float:
-        """Calculate current breathing rate in breaths per minute"""
         total_breaths = self.breath_count_left + self.breath_count_right
         minutes = current_time / 60.0
-        
         return total_breaths / max(minutes, 1e-6)
     
     def _generate_summary(self) -> SessionSummary:
-        """Generate session summary statistics"""
         if not self.frame_metrics:
             raise ValueError("No metrics to summarize")
         
@@ -551,12 +511,11 @@ class SwimAnalyzer:
         )
 
 
-# ═══════════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────────
 # REPORTING & VISUALIZATION
-# ═══════════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────────
 
 def generate_plots(analyzer: SwimAnalyzer, config: AnalysisConfig) -> io.BytesIO:
-    """Generate comprehensive time-series plots"""
     metrics = analyzer.frame_metrics
     times = [m.time_s for m in metrics]
     
@@ -634,26 +593,14 @@ def generate_plots(analyzer: SwimAnalyzer, config: AnalysisConfig) -> io.BytesIO
 def generate_pdf_report(analyzer: SwimAnalyzer, summary: SessionSummary, 
                        config: AnalysisConfig, filename: str, 
                        plot_buffer: Optional[io.BytesIO] = None) -> io.BytesIO:
-    """Generate comprehensive PDF report"""
     buffer = io.BytesIO()
     pdf = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
     
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(
-        name='CustomTitle',
-        parent=styles['Title'],
-        fontSize=24,
-        textColor=colors.HexColor('#1f77b4'),
-        spaceAfter=20
-    ))
-    styles.add(ParagraphStyle(
-        name='SectionHeader',
-        parent=styles['Heading2'],
-        fontSize=14,
-        textColor=colors.HexColor('#2ca02c'),
-        spaceBefore=15,
-        spaceAfter=10
-    ))
+    styles.add(ParagraphStyle(name='CustomTitle', parent=styles['Title'], fontSize=24,
+                             textColor=colors.HexColor('#1f77b4'), spaceAfter=20))
+    styles.add(ParagraphStyle(name='SectionHeader', parent=styles['Heading2'], fontSize=14,
+                             textColor=colors.HexColor('#2ca02c'), spaceBefore=15, spaceAfter=10))
     
     story = []
     
@@ -736,14 +683,9 @@ def generate_pdf_report(analyzer: SwimAnalyzer, summary: SessionSummary,
     story.append(Paragraph("Recommended Training Focus", styles['SectionHeader']))
     recommendations = generate_recommendations(summary, config)
     
-    rec_items = []
     for rec in recommendations:
-        rec_items.append(Paragraph(f"• {rec}", styles['Normal']))
-    
-    story.append(Spacer(1, 0.2*inch))
-    for item in rec_items:
-        story.append(item)
-    story.append(Spacer(1, 0.3*inch))
+        story.append(Paragraph(rec, styles['Normal']))
+        story.append(Spacer(1, 0.1*inch))
     
     if plot_buffer and plot_buffer.getvalue():
         story.append(PageBreak())
@@ -757,12 +699,10 @@ def generate_pdf_report(analyzer: SwimAnalyzer, summary: SessionSummary,
     
     pdf.build(story)
     buffer.seek(0)
-    
     return buffer
 
 
 def generate_recommendations(summary: SessionSummary, config: AnalysisConfig) -> List[str]:
-    """Generate personalized training recommendations"""
     recommendations = []
     
     if summary.avg_score < 70:
@@ -847,7 +787,6 @@ def generate_recommendations(summary: SessionSummary, config: AnalysisConfig) ->
 
 
 def export_to_csv(analyzer: SwimAnalyzer) -> io.BytesIO:
-    """Export frame metrics to CSV"""
     data = {
         'time_s': [m.time_s for m in analyzer.frame_metrics],
         'elbow_angle_deg': [m.elbow_angle for m in analyzer.frame_metrics],
@@ -865,14 +804,12 @@ def export_to_csv(analyzer: SwimAnalyzer) -> io.BytesIO:
     buffer = io.BytesIO()
     df.to_csv(buffer, index=False, float_format="%.2f")
     buffer.seek(0)
-    
     return buffer
 
 
 def create_results_bundle(video_path: str, csv_buffer: io.BytesIO, 
                          pdf_buffer: io.BytesIO, plot_buffer: Optional[io.BytesIO],
                          timestamp: str) -> io.BytesIO:
-    """Create ZIP bundle of all results"""
     zip_buffer = io.BytesIO()
     
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -889,9 +826,9 @@ def create_results_bundle(video_path: str, csv_buffer: io.BytesIO,
     return zip_buffer
 
 
-# ═══════════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────────
 # STREAMLIT USER INTERFACE
-# ═══════════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────────
 
 def main():
     st.set_page_config(
@@ -909,12 +846,6 @@ def main():
             color: #1f77b4;
             text-align: center;
             margin-bottom: 1rem;
-        }
-        .metric-card {
-            background-color: #f0f2f6;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid #1f77b4;
         }
         .success-box {
             background-color: #d4edda;
@@ -935,11 +866,7 @@ def main():
     with st.sidebar:
         st.header("⚙️ Analysis Configuration")
         
-        is_underwater = st.checkbox(
-            "Underwater footage",
-            value=False,
-            help="Enable for underwater camera angles (adjusts knee angle thresholds)"
-        )
+        is_underwater = st.checkbox("Underwater footage", value=False)
         
         st.divider()
         st.subheader("Display Options")
@@ -947,32 +874,20 @@ def main():
         show_metrics_dashboard = st.checkbox("Show metrics dashboard", value=True)
         show_recommendations = st.checkbox("Show training recommendations", value=True)
         show_plots_inline = st.checkbox("Show charts inline", value=False)
-        show_individual_downloads = st.checkbox("Individual file downloads", value=False)
         
         st.divider()
         st.subheader("Advanced Settings")
         
         with st.expander("Detection Parameters"):
             min_confidence = st.slider(
-                "Pose detection confidence",
-                min_value=0.3,
-                max_value=0.9,
-                value=0.6,
-                step=0.05
+                "Pose detection confidence", 0.3, 0.9, 0.6, 0.05
             )
-            
             smoothing_window = st.slider(
-                "Smoothing window (frames)",
-                min_value=3,
-                max_value=15,
-                value=7,
-                step=2
+                "Smoothing window (frames)", 3, 15, 7, 2
             )
     
     uploaded_file = st.file_uploader(
-        "Upload swimming video",
-        type=["mp4", "mov", "avi"],
-        help="Best results with side-view footage showing full body"
+        "Upload swimming video", type=["mp4", "mov", "avi"]
     )
     
     if uploaded_file is not None:
@@ -995,21 +910,20 @@ def main():
                 )
                 analyzer = SwimAnalyzer(config, is_underwater=is_underwater)
                 
-                st.info("🔄 Processing video... This may take several minutes depending on video length.")
+                st.info("Processing video... This may take several minutes.")
                 progress_bar = st.progress(0)
                 status_text = st.empty()
                 
-                def update_progress(progress: float):
-                    progress_bar.progress(progress)
-                    status_text.text(f"Processing: {int(progress * 100)}% complete")
+                def update_progress(p: float):
+                    progress_bar.progress(p)
+                    status_text.text(f"Processing: {int(p * 100)}%")
                 
                 summary = analyzer.process_video(input_path, output_path, update_progress)
                 
                 progress_bar.empty()
                 status_text.empty()
                 
-                st.markdown('<div class="success-box">✅ <b>Analysis Complete!</b> Results ready for review.</div>', 
-                           unsafe_allow_html=True)
+                st.markdown('<div class="success-box">✅ Analysis Complete!</div>', unsafe_allow_html=True)
                 
                 st.divider()
                 st.subheader("📹 Annotated Video")
@@ -1018,45 +932,11 @@ def main():
                 if show_metrics_dashboard:
                     st.divider()
                     st.subheader("📊 Performance Dashboard")
-                    
-                    col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
-                    
-                    with col1:
-                        score_val = int(summary.avg_score)
-                        score_color = '#4CAF50' if score_val >= 80 else '#FF9800' if score_val >= 60 else '#F44336'
-                        
-                        st.markdown(f"""
-                        <div style="text-align:center;">
-                            <h4>Overall Technique Score</h4>
-                            <div style="
-                                background: conic-gradient(
-                                    {score_color} {score_val * 3.6}deg,
-                                    #e0e0e0 {score_val * 3.6}deg 360deg
-                                );
-                                width: 180px; height: 180px; border-radius: 50%;
-                                margin: 10px auto;
-                                display: flex; align-items: center; justify-content: center;
-                                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                            ">
-                                <div style="
-                                    background: white; width: 140px; height: 140px;
-                                    border-radius: 50%; display: flex;
-                                    align-items: center; justify-content: center;
-                                    font-size: 48px; font-weight: bold; color: #333;
-                                ">
-                                    {score_val}
-                                </div>
-                            </div>
-                            <p style="font-size:16px; color:#666; margin-top: 5px;">/ 100</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col2:
-                        st.metric("Stroke Rate", f"{summary.stroke_rate_single:.1f} spm")
-                    with col3:
-                        st.metric("Breathing Rate", f"{summary.breaths_per_min:.1f}/min")
-                    with col4:
-                        st.metric("Max Body Roll", f"{summary.max_roll_abs:.1f}°")
+                    cols = st.columns(4)
+                    cols[0].metric("Technique Score", f"{summary.avg_score:.1f}/100")
+                    cols[1].metric("Stroke Rate", f"{summary.stroke_rate_single:.1f} spm")
+                    cols[2].metric("Breathing Rate", f"{summary.breaths_per_min:.1f}/min")
+                    cols[3].metric("Max Roll", f"{summary.max_roll_abs:.1f}°")
                 
                 if show_recommendations:
                     st.divider()
@@ -1064,20 +944,17 @@ def main():
                     for rec in generate_recommendations(summary, config):
                         st.markdown(rec, unsafe_allow_html=True)
                 
-                st.divider()
-                st.subheader("💾 Export Results")
-                
-                with st.spinner("Generating files..."):
+                with st.spinner("Preparing downloads..."):
                     csv_buffer = export_to_csv(analyzer)
                     plot_buffer = generate_plots(analyzer, config)
                     pdf_buffer = generate_pdf_report(analyzer, summary, config, uploaded_file.name, plot_buffer)
                     zip_buffer = create_results_bundle(output_path, csv_buffer, pdf_buffer, plot_buffer, timestamp)
                 
-                if show_plots_inline and plot_buffer:
-                    st.image(plot_buffer.getvalue(), use_column_width=True)
+                if show_plots_inline:
+                    st.image(plot_buffer.getvalue())
                 
                 st.download_button(
-                    "⬇️ Download Complete Analysis Package (ZIP)",
+                    "⬇️ Download Full Analysis (ZIP)",
                     zip_buffer,
                     f"swim_analysis_{timestamp}.zip",
                     "application/zip",
@@ -1085,7 +962,7 @@ def main():
                 )
             
             except Exception as e:
-                st.error(f"Error during analysis: {str(e)}")
+                st.error(f"Analysis failed: {str(e)}")
             
             finally:
                 for path in [input_path, output_path]:
@@ -1094,9 +971,6 @@ def main():
                             os.unlink(path)
                         except:
                             pass
-    
-    else:
-        st.info("👆 Upload a swimming video to begin analysis")
 
 
 if __name__ == "__main__":
