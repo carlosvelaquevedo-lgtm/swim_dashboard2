@@ -7,6 +7,9 @@ Original file is located at
     https://colab.research.google.com/drive/1McUyCbG1Oaz34jMhNBfkNuToxkYt7CAE
 """
 # -*- coding: utf-8 -*-
+
+
+# -*- coding: utf-8 -*-
 """
 🏊 Enhanced Freestyle Swimming Technique Analyzer
 Professional-grade biomechanical analysis with advanced metrics
@@ -38,6 +41,7 @@ import io
 import tempfile
 import urllib.request
 import zipfile
+
 
 # ═══════════════════════════════════════════════════════════════════
 # DATA STRUCTURES
@@ -559,7 +563,6 @@ def generate_plots(analyzer: SwimAnalyzer, config: AnalysisConfig) -> io.BytesIO
     fig = plt.figure(figsize=(14, 11))
     gs = fig.add_gridspec(5, 1, hspace=0.35)
     
-    # Plot 1: Joint Angles
     ax1 = fig.add_subplot(gs[0, 0])
     ax1.plot(times, [m.elbow_angle for m in metrics], label="Elbow", color="#1f77b4", linewidth=1.5)
     ax1.plot(times, [m.knee_left for m in metrics], label="Knee L", color="#2ca02c", linewidth=1.5)
@@ -570,7 +573,6 @@ def generate_plots(analyzer: SwimAnalyzer, config: AnalysisConfig) -> io.BytesIO
     ax1.legend(loc="upper right", framealpha=0.9)
     ax1.grid(True, alpha=0.3)
     
-    # Plot 2: Technique Score & Symmetry
     ax2 = fig.add_subplot(gs[1, 0])
     ax2_twin = ax2.twinx()
     ax2.plot(times, [m.score for m in metrics], label="Score", color="#2ca02c", linewidth=1.5)
@@ -582,7 +584,6 @@ def generate_plots(analyzer: SwimAnalyzer, config: AnalysisConfig) -> io.BytesIO
     ax2_twin.legend(loc="upper right")
     ax2.grid(True, alpha=0.3)
     
-    # Plot 3: Body Roll
     ax3 = fig.add_subplot(gs[2, 0])
     ax3.plot(times, [m.body_roll for m in metrics], label="Body Roll", color="#9467bd", linewidth=1.5)
     ax3.axhline(0, color='gray', linestyle='--', alpha=0.5)
@@ -593,7 +594,6 @@ def generate_plots(analyzer: SwimAnalyzer, config: AnalysisConfig) -> io.BytesIO
     ax3.legend()
     ax3.grid(True, alpha=0.3)
     
-    # Plot 4: Head Rotation (Yaw)
     ax4 = fig.add_subplot(gs[3, 0])
     ax4.plot(times, [m.yaw_proxy for m in metrics], label="Head Yaw", color="#e377c2", linewidth=1.5)
     ax4.axhline(0, color='gray', linestyle='--', alpha=0.5)
@@ -604,15 +604,12 @@ def generate_plots(analyzer: SwimAnalyzer, config: AnalysisConfig) -> io.BytesIO
     ax4.legend()
     ax4.grid(True, alpha=0.3)
     
-    # Plot 5: Events Timeline
     ax5 = fig.add_subplot(gs[4, 0])
     ax5.plot(times, [m.score for m in metrics], color="#2ca02c", alpha=0.3, linewidth=1)
     
-    # Mark strokes
     for stroke_time in analyzer.stroke_times:
         ax5.axvline(stroke_time, color="#00c8ff", linestyle="--", alpha=0.6, linewidth=1)
     
-    # Mark breathing events
     last_state = 'N'
     for i, m in enumerate(metrics):
         if m.breath_state in ('L', 'R') and m.breath_state != last_state:
@@ -626,7 +623,6 @@ def generate_plots(analyzer: SwimAnalyzer, config: AnalysisConfig) -> io.BytesIO
     ax5.set_ylim(0, 110)
     ax5.grid(True, alpha=0.3)
     
-    # Save to buffer
     buffer = io.BytesIO()
     plt.savefig(buffer, format="png", dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -661,11 +657,9 @@ def generate_pdf_report(analyzer: SwimAnalyzer, summary: SessionSummary,
     
     story = []
     
-    # Title
     story.append(Paragraph("Freestyle Swimming Technique Analysis", styles['CustomTitle']))
     story.append(Spacer(1, 0.2*inch))
     
-    # Session Information
     story.append(Paragraph("Session Information", styles['SectionHeader']))
     session_data = [
         ['Video File:', filename],
@@ -686,7 +680,6 @@ def generate_pdf_report(analyzer: SwimAnalyzer, summary: SessionSummary,
     story.append(session_table)
     story.append(Spacer(1, 0.3*inch))
     
-    # Performance Metrics
     story.append(Paragraph("Performance Metrics", styles['SectionHeader']))
     
     score_color = colors.green if summary.avg_score >= 80 else colors.orange if summary.avg_score >= 60 else colors.red
@@ -715,7 +708,6 @@ def generate_pdf_report(analyzer: SwimAnalyzer, summary: SessionSummary,
     story.append(metrics_table)
     story.append(Spacer(1, 0.3*inch))
     
-    # Biomechanical Analysis
     story.append(Paragraph("Biomechanical Analysis", styles['SectionHeader']))
     bio_data = [
         ['Parameter', 'Average', 'Ideal Range', 'Assessment'],
@@ -741,19 +733,18 @@ def generate_pdf_report(analyzer: SwimAnalyzer, summary: SessionSummary,
     story.append(bio_table)
     story.append(Spacer(1, 0.3*inch))
     
-    # Recommendations
     story.append(Paragraph("Recommended Training Focus", styles['SectionHeader']))
     recommendations = generate_recommendations(summary, config)
     
     rec_items = []
     for rec in recommendations:
-        rec_items.append(ListItem(Paragraph(rec, styles['Normal']), leftIndent=20))
+        rec_items.append(Paragraph(f"• {rec}", styles['Normal']))
     
-    rec_list = ListFlowable(rec_items, bulletType='bullet', start='bulletchar')
-    story.append(rec_list)
+    story.append(Spacer(1, 0.2*inch))
+    for item in rec_items:
+        story.append(item)
     story.append(Spacer(1, 0.3*inch))
     
-    # Add plot if available
     if plot_buffer and plot_buffer.getvalue():
         story.append(PageBreak())
         story.append(Paragraph("Time-Series Analysis", styles['SectionHeader']))
@@ -764,7 +755,6 @@ def generate_pdf_report(analyzer: SwimAnalyzer, summary: SessionSummary,
         plot_image.drawHeight = 5.5*inch
         story.append(plot_image)
     
-    # Build PDF
     pdf.build(story)
     buffer.seek(0)
     
@@ -775,7 +765,6 @@ def generate_recommendations(summary: SessionSummary, config: AnalysisConfig) ->
     """Generate personalized training recommendations"""
     recommendations = []
     
-    # Score-based recommendations
     if summary.avg_score < 70:
         recommendations.append(
             "<b>High-Elbow Catch Drill:</b> Practice fingertip drag or catch-up drill to develop "
@@ -787,7 +776,6 @@ def generate_recommendations(summary: SessionSummary, config: AnalysisConfig) ->
             "adding sprint intervals to build power while maintaining form."
         )
     
-    # Symmetry recommendations
     if summary.avg_symmetry > 15:
         recommendations.append(
             "<b>Symmetry Development:</b> Practice single-arm freestyle, alternating sides every 25m. "
@@ -799,7 +787,6 @@ def generate_recommendations(summary: SessionSummary, config: AnalysisConfig) ->
             "which leg tends to bend more. Focus on the straighter leg maintaining form."
         )
     
-    # Body roll recommendations
     if summary.max_roll_abs > config.ideal_roll_abs_max + 10:
         recommendations.append(
             "<b>Body Roll Control - Over-rotation:</b> Practice 6-kick switch drill. "
@@ -816,7 +803,6 @@ def generate_recommendations(summary: SessionSummary, config: AnalysisConfig) ->
             "roll (60-70°) drills, then dial back to efficient 40-50° range."
         )
     
-    # Breathing recommendations
     breath_asymmetry = abs(summary.breath_count_left - summary.breath_count_right)
     total_breaths = summary.breath_count_left + summary.breath_count_right
     
@@ -839,7 +825,6 @@ def generate_recommendations(summary: SessionSummary, config: AnalysisConfig) ->
             "not holding breath excessively. Establish consistent breathing every 2-3 strokes."
         )
     
-    # Stroke rate recommendations
     if summary.stroke_rate_single < 40:
         recommendations.append(
             "<b>Increase Tempo:</b> Stroke rate is low. Use tempo trainer at 1.2-1.4 sec/stroke. "
@@ -851,7 +836,6 @@ def generate_recommendations(summary: SessionSummary, config: AnalysisConfig) ->
             "Focus on lengthening stroke and glide phase. Target 55-65 spm for efficiency."
         )
     
-    # Default recommendation if technique is strong
     if not recommendations or summary.avg_score >= 85:
         recommendations.append(
             "<b>Progressive Overload:</b> Your technique is solid. Gradually increase training "
@@ -892,17 +876,12 @@ def create_results_bundle(video_path: str, csv_buffer: io.BytesIO,
     zip_buffer = io.BytesIO()
     
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        # Add video
         with open(video_path, 'rb') as f:
             zipf.writestr(f"annotated_swim_{timestamp}.mp4", f.read())
         
-        # Add CSV
         zipf.writestr(f"swim_data_{timestamp}.csv", csv_buffer.getvalue())
-        
-        # Add PDF
         zipf.writestr(f"swim_report_{timestamp}.pdf", pdf_buffer.getvalue())
         
-        # Add plot if available
         if plot_buffer and plot_buffer.getvalue():
             zipf.writestr(f"analysis_charts_{timestamp}.png", plot_buffer.getvalue())
     
@@ -915,7 +894,6 @@ def create_results_bundle(video_path: str, csv_buffer: io.BytesIO,
 # ═══════════════════════════════════════════════════════════════════
 
 def main():
-    """Main Streamlit application"""
     st.set_page_config(
         page_title="Freestyle Swimming Analyzer",
         layout="wide",
@@ -923,7 +901,6 @@ def main():
         initial_sidebar_state="expanded"
     )
     
-    # Custom CSS
     st.markdown("""
         <style>
         .main-header {
@@ -955,7 +932,6 @@ def main():
         "technique scoring, and personalized training recommendations."
     )
     
-    # Sidebar Configuration
     with st.sidebar:
         st.header("⚙️ Analysis Configuration")
         
@@ -982,8 +958,7 @@ def main():
                 min_value=0.3,
                 max_value=0.9,
                 value=0.6,
-                step=0.05,
-                help="Lower values detect more poses but may include false positives"
+                step=0.05
             )
             
             smoothing_window = st.slider(
@@ -991,11 +966,9 @@ def main():
                 min_value=3,
                 max_value=15,
                 value=7,
-                step=2,
-                help="Larger windows provide smoother data but more lag"
+                step=2
             )
     
-    # File Upload
     uploaded_file = st.file_uploader(
         "Upload swimming video",
         type=["mp4", "mov", "avi"],
@@ -1006,27 +979,22 @@ def main():
         file_size_mb = uploaded_file.size / (1024 * 1024)
         st.success(f"✅ Video loaded: **{uploaded_file.name}** ({file_size_mb:.1f} MB)")
         
-        # Analyze button
         if st.button("🚀 Analyze Video", type="primary", use_container_width=True):
             
-            # Create temporary input file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_input:
                 tmp_input.write(uploaded_file.read())
                 input_path = tmp_input.name
             
-            # Create temporary output file
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             output_path = tempfile.mktemp(suffix=".mp4")
             
             try:
-                # Initialize analyzer
                 config = AnalysisConfig(
                     min_detection_confidence=min_confidence,
                     smoothing_window=smoothing_window
                 )
                 analyzer = SwimAnalyzer(config, is_underwater=is_underwater)
                 
-                # Progress tracking
                 st.info("🔄 Processing video... This may take several minutes depending on video length.")
                 progress_bar = st.progress(0)
                 status_text = st.empty()
@@ -1035,23 +1003,18 @@ def main():
                     progress_bar.progress(progress)
                     status_text.text(f"Processing: {int(progress * 100)}% complete")
                 
-                # Process video
                 summary = analyzer.process_video(input_path, output_path, update_progress)
                 
                 progress_bar.empty()
                 status_text.empty()
                 
                 st.markdown('<div class="success-box">✅ <b>Analysis Complete!</b> Results ready for review.</div>', 
-                          unsafe_allow_html=True)
+                           unsafe_allow_html=True)
                 
-                # Display Results
                 st.divider()
-                
-                # Video Preview
                 st.subheader("📹 Annotated Video")
                 st.video(output_path)
                 
-                # Metrics Dashboard
                 if show_metrics_dashboard:
                     st.divider()
                     st.subheader("📊 Performance Dashboard")
@@ -1059,7 +1022,6 @@ def main():
                     col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
                     
                     with col1:
-                        # Score gauge
                         score_val = int(summary.avg_score)
                         score_color = '#4CAF50' if score_val >= 80 else '#FF9800' if score_val >= 60 else '#F44336'
                         
@@ -1090,133 +1052,42 @@ def main():
                         """, unsafe_allow_html=True)
                     
                     with col2:
-                        st.metric(
-                            "Stroke Rate",
-                            f"{summary.stroke_rate_single:.1f}",
-                            f"({summary.stroke_rate_both:.0f} both arms)",
-                            help="Strokes per minute (single arm)"
-                        )
-                        st.caption("spm")
-                    
+                        st.metric("Stroke Rate", f"{summary.stroke_rate_single:.1f} spm")
                     with col3:
-                        breath_detail = f"{summary.breath_count_left}L / {summary.breath_count_right}R"
-                        st.metric(
-                            "Breathing",
-                            f"{summary.breaths_per_min:.1f}",
-                            breath_detail
-                        )
-                        st.caption("breaths/min")
-                    
+                        st.metric("Breathing Rate", f"{summary.breaths_per_min:.1f}/min")
                     with col4:
-                        roll_status = "⚠️ High" if summary.max_roll_abs > config.ideal_roll_abs_max else "✅ Good"
-                        st.metric(
-                            "Max Roll",
-                            f"{summary.max_roll_abs:.1f}°",
-                            roll_status
-                        )
-                    
-                    # Additional metrics row
-                    st.divider()
-                    col5, col6, col7, col8 = st.columns(4)
-                    
-                    with col5:
-                        st.metric("Total Strokes", summary.total_strokes)
-                    
-                    with col6:
-                        st.metric("Avg Symmetry", f"{summary.avg_symmetry:.1f}°")
-                    
-                    with col7:
-                        st.metric("Avg Roll", f"{summary.avg_roll:.1f}°")
-                    
-                    with col8:
-                        st.metric("Duration", f"{summary.duration_s:.1f}s")
+                        st.metric("Max Body Roll", f"{summary.max_roll_abs:.1f}°")
                 
-                # Training Recommendations
                 if show_recommendations:
                     st.divider()
                     st.subheader("🎯 Training Recommendations")
-                    
-                    recommendations = generate_recommendations(summary, config)
-                    
-                    for i, rec in enumerate(recommendations, 1):
-                        with st.expander(f"Recommendation {i}", expanded=(i == 1)):
-                            st.markdown(rec, unsafe_allow_html=True)
+                    for rec in generate_recommendations(summary, config):
+                        st.markdown(rec, unsafe_allow_html=True)
                 
-                # Generate exports
                 st.divider()
                 st.subheader("💾 Export Results")
                 
-                with st.spinner("Generating export files..."):
-                    # Generate all exports
+                with st.spinner("Generating files..."):
                     csv_buffer = export_to_csv(analyzer)
                     plot_buffer = generate_plots(analyzer, config)
-                    pdf_buffer = generate_pdf_report(
-                        analyzer, summary, config, 
-                        uploaded_file.name, plot_buffer
-                    )
-                    zip_buffer = create_results_bundle(
-                        output_path, csv_buffer, pdf_buffer, 
-                        plot_buffer, timestamp
-                    )
+                    pdf_buffer = generate_pdf_report(analyzer, summary, config, uploaded_file.name, plot_buffer)
+                    zip_buffer = create_results_bundle(output_path, csv_buffer, pdf_buffer, plot_buffer, timestamp)
                 
-                # Show plots inline if requested
                 if show_plots_inline and plot_buffer:
-                    st.divider()
-                    st.subheader("📈 Time-Series Analysis")
-                    st.image(plot_buffer, use_container_width=True)
+                    st.image(plot_buffer.getvalue(), use_column_width=True)
                 
-                # Download buttons
                 st.download_button(
-                    label="⬇️ Download Complete Analysis Package (ZIP)",
-                    data=zip_buffer,
-                    file_name=f"swim_analysis_{timestamp}.zip",
-                    mime="application/zip",
-                    use_container_width=True,
-                    help="Includes: annotated video, CSV data, PDF report, and analysis charts"
+                    "⬇️ Download Complete Analysis Package (ZIP)",
+                    zip_buffer,
+                    f"swim_analysis_{timestamp}.zip",
+                    "application/zip",
+                    use_container_width=True
                 )
-                
-                if show_individual_downloads:
-                    col_d1, col_d2, col_d3, col_d4 = st.columns(4)
-                    
-                    with col_d1:
-                        with open(output_path, 'rb') as f:
-                            st.download_button(
-                                "📹 Video",
-                                f,
-                                f"annotated_{timestamp}.mp4",
-                                "video/mp4"
-                            )
-                    
-                    with col_d2:
-                        st.download_button(
-                            "📊 CSV Data",
-                            csv_buffer,
-                            f"data_{timestamp}.csv",
-                            "text/csv"
-                        )
-                    
-                    with col_d3:
-                        st.download_button(
-                            "📄 PDF Report",
-                            pdf_buffer,
-                            f"report_{timestamp}.pdf",
-                            "application/pdf"
-                        )
-                    
-                    with col_d4:
-                        st.download_button(
-                            "📈 Charts",
-                            plot_buffer,
-                            f"charts_{timestamp}.png",
-                            "image/png"
-                        )
             
             except Exception as e:
-                st.error(f"❌ Error during analysis: {str(e)}")
-                st.exception(e)
+                st.error(f"Error during analysis: {str(e)}")
             
             finally:
-                # Cleanup temporary files
                 for path in [input_path, output_path]:
                     if path and os.path.exists(path):
                         try:
@@ -1225,26 +1096,7 @@ def main():
                             pass
     
     else:
-        # Instructions when no file uploaded
         st.info("👆 Upload a swimming video to begin analysis")
-        
-        with st.expander("📖 Usage Tips"):
-            st.markdown("""
-            **For best results:**
-            - Use side-view footage showing the full body
-            - Ensure good lighting and clear water
-            - Swimmer should be swimming continuously (not stopping/turning)
-            - Video should be at least 10 seconds long
-            - Recommended: 30+ seconds for reliable stroke rate calculation
-            
-            **What gets analyzed:**
-            - ✅ Elbow angle during pull phase
-            - ✅ Knee angles and leg symmetry
-            - ✅ Body roll mechanics
-            - ✅ Stroke rate and tempo
-            - ✅ Breathing pattern and frequency
-            - ✅ Overall technique score (0-100)
-            """)
 
 
 if __name__ == "__main__":
