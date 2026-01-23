@@ -7,13 +7,8 @@ Original file is located at
     https://colab.research.google.com/drive/1McUyCbG1Oaz34jMhNBfkNuToxkYt7CAE
 """
 # -*- coding: utf-8 -*-
-
-
-# -*- coding: utf-8 -*-
 """
-# -*- coding: utf-8 -*-
-"""
-🏊 Enhanced Freestyle Swimming Technique Analyzer
+Enhanced Freestyle Swimming Technique Analyzer
 Professional-grade biomechanical analysis with advanced metrics
 """
 
@@ -263,10 +258,7 @@ class SwimAnalyzer:
         if len(self.elbow_window) < self.config.elbow_min_window:
             return False
         
-        is_minimum, _ = detect_local_minimum(
-            list(self.elbow_window), 
-            self.config.elbow_min_prominence
-        )
+        is_minimum, _ = detect_local_minimum(list(self.elbow_window), self.config.elbow_min_prominence)
         
         if not is_minimum:
             return False
@@ -311,7 +303,7 @@ class SwimAnalyzer:
         annotated = frame.copy()
         
         ideal_knee = (self.config.ideal_knee_underwater if self.is_underwater 
-                     else self.config.ideal_knee_surface)
+                      else self.config.ideal_knee_surface)
         
         elbow_dev = calculate_deviation(metrics.elbow_angle, self.config.ideal_elbow)
         knee_l_dev = calculate_deviation(metrics.knee_left, ideal_knee)
@@ -361,8 +353,7 @@ class SwimAnalyzer:
         else:
             return (0, 0, 255)
     
-    def process_video(self, input_path: str, output_path: str, 
-                     progress_callback=None) -> SessionSummary:
+    def process_video(self, input_path: str, output_path: str, progress_callback=None) -> SessionSummary:
         cap = cv2.VideoCapture(input_path)
         if not cap.isOpened():
             raise RuntimeError("Cannot open video file")
@@ -372,16 +363,10 @@ class SwimAnalyzer:
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         
-        writer = cv2.VideoWriter(
-            output_path, 
-            cv2.VideoWriter_fourcc(*"mp4v"), 
-            fps, 
-            (width, height)
-        )
+        writer = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
         
         frame_id = 0
-        ideal_knee = (self.config.ideal_knee_underwater if self.is_underwater 
-                     else self.config.ideal_knee_surface)
+        ideal_knee = self.config.ideal_knee_underwater if self.is_underwater else self.config.ideal_knee_surface
         
         try:
             while cap.isOpened():
@@ -396,10 +381,8 @@ class SwimAnalyzer:
                 time_s = frame_id / fps
                 time_ms = int(time_s * 1000)
                 
-                mp_image = mp.Image(
-                    image_format=mp.ImageFormat.SRGB,
-                    data=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                )
+                mp_image = mp.Image(image_format=mp.ImageFormat.SRGB,
+                                    data=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                 result = self.detector.detect_for_video(mp_image, time_ms)
                 
                 if not result.pose_landmarks:
@@ -469,11 +452,9 @@ class SwimAnalyzer:
     def _calculate_current_stroke_rate(self) -> float:
         if len(self.stroke_times) < 2:
             return 0.0
-        
         duration = self.stroke_times[-1] - self.stroke_times[0]
         if duration < 0.1:
             return 0.0
-        
         return 60.0 * (len(self.stroke_times) - 1) / duration
     
     def _calculate_current_breathing_rate(self, current_time: float) -> float:
@@ -546,8 +527,7 @@ def generate_plots(analyzer: SwimAnalyzer, config: AnalysisConfig) -> io.BytesIO
     ax3 = fig.add_subplot(gs[2, 0])
     ax3.plot(times, [m.body_roll for m in metrics], label="Body Roll", color="#9467bd", linewidth=1.5)
     ax3.axhline(0, color='gray', linestyle='--', alpha=0.5)
-    ax3.axhspan(-config.ideal_roll_abs_max, config.ideal_roll_abs_max, 
-                color='green', alpha=0.08, label='Ideal Range')
+    ax3.axhspan(-config.ideal_roll_abs_max, config.ideal_roll_abs_max, color='green', alpha=0.08, label='Ideal Range')
     ax3.set_ylabel("Roll Angle (°)")
     ax3.set_title("Body Roll Analysis", fontweight='bold')
     ax3.legend()
@@ -578,7 +558,7 @@ def generate_plots(analyzer: SwimAnalyzer, config: AnalysisConfig) -> io.BytesIO
     
     ax5.set_xlabel("Time (seconds)", fontweight='bold')
     ax5.set_ylabel("Score")
-    ax5.set_title("Events Timeline (strokes: cyan dashed, breaths: L=orange/R=blue dotted)", fontweight='bold')
+    ax5.set_title("Events Timeline (strokes: cyan dashed, breaths: L=orange / R=blue dotted)", fontweight='bold')
     ax5.set_ylim(0, 110)
     ax5.grid(True, alpha=0.3)
     
@@ -586,21 +566,20 @@ def generate_plots(analyzer: SwimAnalyzer, config: AnalysisConfig) -> io.BytesIO
     plt.savefig(buffer, format="png", dpi=150, bbox_inches="tight")
     plt.close(fig)
     buffer.seek(0)
-    
     return buffer
 
 
 def generate_pdf_report(analyzer: SwimAnalyzer, summary: SessionSummary, 
-                       config: AnalysisConfig, filename: str, 
-                       plot_buffer: Optional[io.BytesIO] = None) -> io.BytesIO:
+                        config: AnalysisConfig, filename: str, 
+                        plot_buffer: Optional[io.BytesIO] = None) -> io.BytesIO:
     buffer = io.BytesIO()
     pdf = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
     
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name='CustomTitle', parent=styles['Title'], fontSize=24,
-                             textColor=colors.HexColor('#1f77b4'), spaceAfter=20))
+                              textColor=colors.HexColor('#1f77b4'), spaceAfter=20))
     styles.add(ParagraphStyle(name='SectionHeader', parent=styles['Heading2'], fontSize=14,
-                             textColor=colors.HexColor('#2ca02c'), spaceBefore=15, spaceAfter=10))
+                              textColor=colors.HexColor('#2ca02c'), spaceBefore=15, spaceAfter=10))
     
     story = []
     
@@ -681,9 +660,7 @@ def generate_pdf_report(analyzer: SwimAnalyzer, summary: SessionSummary,
     story.append(Spacer(1, 0.3*inch))
     
     story.append(Paragraph("Recommended Training Focus", styles['SectionHeader']))
-    recommendations = generate_recommendations(summary, config)
-    
-    for rec in recommendations:
+    for rec in generate_recommendations(summary, config):
         story.append(Paragraph(rec, styles['Normal']))
         story.append(Spacer(1, 0.1*inch))
     
@@ -691,7 +668,6 @@ def generate_pdf_report(analyzer: SwimAnalyzer, summary: SessionSummary,
         story.append(PageBreak())
         story.append(Paragraph("Time-Series Analysis", styles['SectionHeader']))
         story.append(Spacer(1, 0.1*inch))
-        
         plot_image = RLImage(plot_buffer)
         plot_image.drawWidth = 7*inch
         plot_image.drawHeight = 5.5*inch
@@ -703,87 +679,20 @@ def generate_pdf_report(analyzer: SwimAnalyzer, summary: SessionSummary,
 
 
 def generate_recommendations(summary: SessionSummary, config: AnalysisConfig) -> List[str]:
-    recommendations = []
-    
+    recs = []
     if summary.avg_score < 70:
-        recommendations.append(
-            "<b>High-Elbow Catch Drill:</b> Practice fingertip drag or catch-up drill to develop "
-            "early vertical forearm (EVF). Focus on keeping elbow above wrist during pull phase."
-        )
-    elif summary.avg_score >= 85:
-        recommendations.append(
-            "<b>Excellent technique!</b> Focus on increasing distance per stroke (DPS) and "
-            "adding sprint intervals to build power while maintaining form."
-        )
-    
+        recs.append("**High-Elbow Catch Drill**: Practice fingertip drag or catch-up drill to develop early vertical forearm (EVF).")
     if summary.avg_symmetry > 15:
-        recommendations.append(
-            "<b>Symmetry Development:</b> Practice single-arm freestyle, alternating sides every 25m. "
-            "Focus on matching pull depth, timing, and body rotation between left and right arms."
-        )
-    elif summary.avg_symmetry > 10:
-        recommendations.append(
-            "<b>Fine-tune Symmetry:</b> Use underwater mirror or video feedback to identify "
-            "which leg tends to bend more. Focus on the straighter leg maintaining form."
-        )
-    
+        recs.append("**Symmetry Development**: Practice single-arm freestyle, alternating sides every 25 m.")
     if summary.max_roll_abs > config.ideal_roll_abs_max + 10:
-        recommendations.append(
-            "<b>Body Roll Control - Over-rotation:</b> Practice 6-kick switch drill. "
-            "Initiate rotation from core/hips, not shoulders. Aim for 45° roll maximum."
-        )
-    elif summary.max_roll_abs > config.ideal_roll_abs_max:
-        recommendations.append(
-            "<b>Body Roll Refinement:</b> Your roll is slightly excessive. Practice maintaining "
-            "head stability while rotating body. Use streamline kicking with 45° roll holds."
-        )
-    elif summary.max_roll_abs < 30:
-        recommendations.append(
-            "<b>Increase Body Roll:</b> You may be swimming too flat. Practice exaggerated "
-            "roll (60-70°) drills, then dial back to efficient 40-50° range."
-        )
-    
-    breath_asymmetry = abs(summary.breath_count_left - summary.breath_count_right)
-    total_breaths = summary.breath_count_left + summary.breath_count_right
-    
-    if total_breaths > 0 and breath_asymmetry / total_breaths > 0.3:
-        stronger_side = "right" if summary.breath_count_right > summary.breath_count_left else "left"
-        recommendations.append(
-            f"<b>Bilateral Breathing:</b> You favor {stronger_side}-side breathing. Practice "
-            "breathing every 3 strokes to develop comfort on both sides and improve balance."
-        )
-    
+        recs.append("**Body Roll Control**: Practice 6-kick switch drill. Aim for 45° maximum roll.")
     if summary.breaths_per_min > 40:
-        recommendations.append(
-            "<b>Breathing Efficiency:</b> High breathing rate detected. Work on breath control: "
-            "practice bilateral breathing (every 3 strokes) for 200m, then hypoxic sets "
-            "(every 5-7 strokes) to reduce breathing frequency."
-        )
-    elif summary.breaths_per_min < 20 and summary.stroke_rate_single > 50:
-        recommendations.append(
-            "<b>Breathing Pattern:</b> Low breathing rate with high stroke rate. Ensure you're "
-            "not holding breath excessively. Establish consistent breathing every 2-3 strokes."
-        )
-    
+        recs.append("**Breathing Efficiency**: High breathing rate detected. Try bilateral breathing every 3 strokes.")
     if summary.stroke_rate_single < 40:
-        recommendations.append(
-            "<b>Increase Tempo:</b> Stroke rate is low. Use tempo trainer at 1.2-1.4 sec/stroke. "
-            "Focus on quick hands and maintaining distance per stroke."
-        )
-    elif summary.stroke_rate_single > 70:
-        recommendations.append(
-            "<b>Reduce Turnover:</b> Very high stroke rate may indicate short, choppy strokes. "
-            "Focus on lengthening stroke and glide phase. Target 55-65 spm for efficiency."
-        )
-    
-    if not recommendations or summary.avg_score >= 85:
-        recommendations.append(
-            "<b>Progressive Overload:</b> Your technique is solid. Gradually increase training "
-            "volume and intensity. Consider adding threshold sets, negative split intervals, "
-            "and open water skills."
-        )
-    
-    return recommendations
+        recs.append("**Increase Tempo**: Use tempo trainer at 1.2–1.4 sec/stroke.")
+    if not recs:
+        recs.append("**Progressive Overload**: Technique is solid — gradually increase volume and intensity.")
+    return recs
 
 
 def export_to_csv(analyzer: SwimAnalyzer) -> io.BytesIO:
@@ -799,7 +708,6 @@ def export_to_csv(analyzer: SwimAnalyzer) -> io.BytesIO:
         'body_roll_deg': [m.body_roll for m in analyzer.frame_metrics],
         'phase': [m.phase for m in analyzer.frame_metrics]
     }
-    
     df = pd.DataFrame(data)
     buffer = io.BytesIO()
     df.to_csv(buffer, index=False, float_format="%.2f")
@@ -808,97 +716,43 @@ def export_to_csv(analyzer: SwimAnalyzer) -> io.BytesIO:
 
 
 def create_results_bundle(video_path: str, csv_buffer: io.BytesIO, 
-                         pdf_buffer: io.BytesIO, plot_buffer: Optional[io.BytesIO],
-                         timestamp: str) -> io.BytesIO:
+                          pdf_buffer: io.BytesIO, plot_buffer: Optional[io.BytesIO],
+                          timestamp: str) -> io.BytesIO:
     zip_buffer = io.BytesIO()
-    
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
         with open(video_path, 'rb') as f:
             zipf.writestr(f"annotated_swim_{timestamp}.mp4", f.read())
-        
         zipf.writestr(f"swim_data_{timestamp}.csv", csv_buffer.getvalue())
         zipf.writestr(f"swim_report_{timestamp}.pdf", pdf_buffer.getvalue())
-        
         if plot_buffer and plot_buffer.getvalue():
             zipf.writestr(f"analysis_charts_{timestamp}.png", plot_buffer.getvalue())
-    
     zip_buffer.seek(0)
     return zip_buffer
 
 
 # ───────────────────────────────────────────────────────────────────
-# STREAMLIT USER INTERFACE
+# STREAMLIT APP
 # ───────────────────────────────────────────────────────────────────
 
 def main():
-    st.set_page_config(
-        page_title="Freestyle Swimming Analyzer",
-        layout="wide",
-        page_icon="🏊",
-        initial_sidebar_state="expanded"
-    )
+    st.set_page_config(page_title="Freestyle Swimming Analyzer", layout="wide", page_icon="🏊")
     
-    st.markdown("""
-        <style>
-        .main-header {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #1f77b4;
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-        .success-box {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 0.25rem;
-            padding: 0.75rem;
-            margin: 1rem 0;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    st.markdown('<p class="main-header">🏊 Freestyle Swimming Technique Analyzer</p>', unsafe_allow_html=True)
-    st.markdown(
-        "Upload a side-view freestyle swimming video for comprehensive biomechanical analysis, "
-        "technique scoring, and personalized training recommendations."
-    )
+    st.title("Freestyle Swimming Technique Analyzer")
+    st.write("Upload side-view freestyle swimming video for biomechanical analysis and recommendations.")
     
     with st.sidebar:
-        st.header("⚙️ Analysis Configuration")
-        
+        st.header("Analysis Settings")
         is_underwater = st.checkbox("Underwater footage", value=False)
-        
-        st.divider()
-        st.subheader("Display Options")
-        
-        show_metrics_dashboard = st.checkbox("Show metrics dashboard", value=True)
-        show_recommendations = st.checkbox("Show training recommendations", value=True)
-        show_plots_inline = st.checkbox("Show charts inline", value=False)
-        
-        st.divider()
-        st.subheader("Advanced Settings")
-        
-        with st.expander("Detection Parameters"):
-            min_confidence = st.slider(
-                "Pose detection confidence", 0.3, 0.9, 0.6, 0.05
-            )
-            smoothing_window = st.slider(
-                "Smoothing window (frames)", 3, 15, 7, 2
-            )
+        min_confidence = st.slider("Min detection confidence", 0.3, 0.9, 0.6, 0.05)
+        smoothing_window = st.slider("Smoothing window (frames)", 3, 15, 7, 2)
     
-    uploaded_file = st.file_uploader(
-        "Upload swimming video", type=["mp4", "mov", "avi"]
-    )
+    uploaded_file = st.file_uploader("Upload video", type=["mp4", "mov", "avi"])
     
     if uploaded_file is not None:
-        file_size_mb = uploaded_file.size / (1024 * 1024)
-        st.success(f"✅ Video loaded: **{uploaded_file.name}** ({file_size_mb:.1f} MB)")
-        
-        if st.button("🚀 Analyze Video", type="primary", use_container_width=True):
-            
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_input:
-                tmp_input.write(uploaded_file.read())
-                input_path = tmp_input.name
+        if st.button("Analyze Video", type="primary"):
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_in:
+                tmp_in.write(uploaded_file.read())
+                input_path = tmp_in.name
             
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             output_path = tempfile.mktemp(suffix=".mp4")
@@ -910,65 +764,54 @@ def main():
                 )
                 analyzer = SwimAnalyzer(config, is_underwater=is_underwater)
                 
-                st.info("Processing video... This may take several minutes.")
-                progress_bar = st.progress(0)
-                status_text = st.empty()
+                progress = st.progress(0)
+                status = st.empty()
                 
-                def update_progress(p: float):
-                    progress_bar.progress(p)
-                    status_text.text(f"Processing: {int(p * 100)}%")
+                def update(p):
+                    progress.progress(p)
+                    status.text(f"Processing: {int(p*100)}%")
                 
-                summary = analyzer.process_video(input_path, output_path, update_progress)
+                summary = analyzer.process_video(input_path, output_path, update)
                 
-                progress_bar.empty()
-                status_text.empty()
+                progress.empty()
+                status.empty()
                 
-                st.markdown('<div class="success-box">✅ Analysis Complete!</div>', unsafe_allow_html=True)
-                
-                st.divider()
-                st.subheader("📹 Annotated Video")
+                st.success("Analysis complete!")
                 st.video(output_path)
                 
-                if show_metrics_dashboard:
-                    st.divider()
-                    st.subheader("📊 Performance Dashboard")
-                    cols = st.columns(4)
-                    cols[0].metric("Technique Score", f"{summary.avg_score:.1f}/100")
-                    cols[1].metric("Stroke Rate", f"{summary.stroke_rate_single:.1f} spm")
-                    cols[2].metric("Breathing Rate", f"{summary.breaths_per_min:.1f}/min")
-                    cols[3].metric("Max Roll", f"{summary.max_roll_abs:.1f}°")
+                st.subheader("Key Metrics")
+                cols = st.columns(4)
+                cols[0].metric("Technique Score", f"{summary.avg_score:.1f}/100")
+                cols[1].metric("Stroke Rate", f"{summary.stroke_rate_single:.1f} spm")
+                cols[2].metric("Breathing Rate", f"{summary.breaths_per_min:.1f}/min")
+                cols[3].metric("Max Roll", f"{summary.max_roll_abs:.1f}°")
                 
-                if show_recommendations:
-                    st.divider()
-                    st.subheader("🎯 Training Recommendations")
-                    for rec in generate_recommendations(summary, config):
-                        st.markdown(rec, unsafe_allow_html=True)
+                st.subheader("Recommendations")
+                for r in generate_recommendations(summary, config):
+                    st.markdown(r)
                 
-                with st.spinner("Preparing downloads..."):
-                    csv_buffer = export_to_csv(analyzer)
-                    plot_buffer = generate_plots(analyzer, config)
-                    pdf_buffer = generate_pdf_report(analyzer, summary, config, uploaded_file.name, plot_buffer)
-                    zip_buffer = create_results_bundle(output_path, csv_buffer, pdf_buffer, plot_buffer, timestamp)
-                
-                if show_plots_inline:
-                    st.image(plot_buffer.getvalue())
+                with st.spinner("Preparing files..."):
+                    csv_buf = export_to_csv(analyzer)
+                    plot_buf = generate_plots(analyzer, config)
+                    pdf_buf = generate_pdf_report(analyzer, summary, config, uploaded_file.name, plot_buf)
+                    zip_buf = create_results_bundle(output_path, csv_buf, pdf_buf, plot_buf, timestamp)
                 
                 st.download_button(
-                    "⬇️ Download Full Analysis (ZIP)",
-                    zip_buffer,
+                    "Download Full Analysis (ZIP)",
+                    zip_buf,
                     f"swim_analysis_{timestamp}.zip",
                     "application/zip",
                     use_container_width=True
                 )
             
             except Exception as e:
-                st.error(f"Analysis failed: {str(e)}")
+                st.error(f"Error: {str(e)}")
             
             finally:
-                for path in [input_path, output_path]:
-                    if path and os.path.exists(path):
+                for p in [input_path, output_path]:
+                    if os.path.exists(p):
                         try:
-                            os.unlink(path)
+                            os.unlink(p)
                         except:
                             pass
 
