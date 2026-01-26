@@ -33,6 +33,14 @@ import tempfile
 import urllib.request
 import zipfile
 
+from dataclasses import dataclass
+
+@dataclass
+class Recommendation:
+    title: str
+    description: str
+    priority: str  # "high" | "medium" | "low"
+
 
 # ───────────────────────────────────────────────────────────────────
 # CUSTOM CSS FOR MODERN UI
@@ -1300,17 +1308,15 @@ def create_results_bundle(video_path: str, csv_buffer: io.BytesIO,
     zip_buffer.seek(0)
     return zip_buffer
 
-
 # ───────────────────────────────────────────────────────────────────
-# STREAMLIT UI COMPONENTS
+# STREAMLIT UI COMPONENTS (FIXED – valid Python)
 # ───────────────────────────────────────────────────────────────────
 
-def render_metric_card(label: str, value: str, ideal: str, 
+def render_metric_card(label: str, value: str, ideal: str,
                        in_range: bool, icon: str = "📊"):
-    """Render a styled metric card."""
     status_class = "metric-card-green" if in_range else "metric-card-red"
     status_icon = "✓" if in_range else "⚠"
-    
+
     st.markdown(f"""
     <div class="metric-card {status_class}">
         <div style="font-size: 24px; margin-bottom: 8px;">{icon}</div>
@@ -1322,87 +1328,83 @@ def render_metric_card(label: str, value: str, ideal: str,
 
 
 def render_score_card(score: float):
-    """Render the main score card."""
-    st.markdown(f""
+    st.markdown(f"""
     <div class="score-card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h2 style="margin: 0; font-size: 24px;">Overall Technique Score</h2>
-            </div>
-            <div style="font-size: 48px; font-weight: bold;">
-                {score:.0f}<span style="font-size: 24px; opacity: 0.75;">/100</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h2 style="margin:0;font-size:24px;">Overall Technique Score</h2>
+            <div style="font-size:48px;font-weight:bold;">
+                {score:.0f}<span style="font-size:24px;opacity:0.75;">/100</span>
             </div>
         </div>
-        <div style="background: rgba(255,255,255,0.2); border-radius: 8px; height: 12px; margin-top: 16px;">
-            <div style="background: white; width: {score}%; height: 12px; border-radius: 8px;"></div>
+        <div style="background:rgba(255,255,255,0.2);border-radius:8px;height:12px;margin-top:16px;">
+            <div style="background:white;width:{score}%;height:12px;border-radius:8px;"></div>
         </div>
     </div>
-    "", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 
 def render_drill_card(drill: TrainingDrill, index: int):
-    """Render a training drill card."""
-    st.markdown(f""
+    st.markdown(f"""
     <div class="drill-card">
-        <div style="display: flex; gap: 12px; align-items: flex-start;">
-            <div style="background: #06b6d4; color: white; width: 28px; height: 28px; 
-                        border-radius: 50%; display: flex; align-items: center; 
-                        justify-content: center; font-weight: bold; flex-shrink: 0;">
+        <div style="display:flex;gap:12px;">
+            <div style="background:#06b6d4;color:white;width:28px;height:28px;
+                        border-radius:50%;display:flex;align-items:center;
+                        justify-content:center;font-weight:bold;">
                 {index}
             </div>
             <div>
-                <div style="color: white; font-weight: 600; font-size: 16px;">{drill.title}</div>
-                <div style="color: #94a3b8; font-size: 14px; margin-top: 4px;">{drill.description}</div>
-                <div style="color: #64748b; font-size: 12px; margin-top: 8px;">
+                <div style="color:white;font-weight:600;font-size:16px;">{drill.title}</div>
+                <div style="color:#94a3b8;font-size:14px;margin-top:4px;">{drill.description}</div>
+                <div style="color:#64748b;font-size:12px;margin-top:8px;">
                     {drill.sets} • {drill.focus}
                 </div>
             </div>
         </div>
     </div>
-    "", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
+
 def render_recommendation_card(rec: Recommendation):
-    """Render a recommendation card."""
     rec_class = f"rec-{rec.priority}"
-    priority_colors = {'high': '#ef4444', 'medium': '#eab308', 'low': '#22c55e'}    
-    st.markdown(f""
+    colors = {"high": "#ef4444", "medium": "#eab308", "low": "#22c55e"}
+
+    st.markdown(f"""
     <div class="{rec_class}">
-        <div style="color: white; font-weight: 600; font-size: 16px;">{rec.title}</div>
-        <div style="color: #94a3b8; font-size: 14px; margin-top: 4px;">{rec.description}</div>
-        <span style="display: inline-block; margin-top: 8px; padding: 4px 8px; 
-                     font-size: 11px; border-radius: 4px;
-                     background: {priority_colors[rec.priority]}33; 
-                     color: {priority_colors[rec.priority]};">
+        <div style="color:white;font-weight:600;font-size:16px;">{rec.title}</div>
+        <div style="color:#94a3b8;font-size:14px;margin-top:4px;">{rec.description}</div>
+        <span style="display:inline-block;margin-top:8px;padding:4px 8px;
+                     font-size:11px;border-radius:4px;
+                     background:{colors[rec.priority]}33;
+                     color:{colors[rec.priority]};">
             {rec.priority.upper()}
         </span>
     </div>
-    "", unsafe_allow_html=True)
-    
+    """, unsafe_allow_html=True)
+
+
 def render_legend():
-    """Render skeleton color legend."""
-    st.markdown(""
-    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
+    st.markdown("""
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
         <div class="legend-item">
             <div class="legend-dot legend-dot-green"></div>
-            <span style="color: #94a3b8; font-size: 12px;">Good Form</span>
+            <span>Good Form</span>
         </div>
         <div class="legend-item">
             <div class="legend-dot legend-dot-yellow"></div>
-            <span style="color: #94a3b8; font-size: 12px;">Fair Form</span>
+            <span>Fair Form</span>
         </div>
         <div class="legend-item">
             <div class="legend-dot legend-dot-red"></div>
-            <span style="color: #94a3b8; font-size: 12px;">Needs Work</span>
+            <span>Needs Work</span>
         </div>
         <div class="legend-item">
             <div class="legend-dot legend-dot-white"></div>
-            <span style="color: #94a3b8; font-size: 12px;">Joint Markers</span>
+            <span>Joint Markers</span>
         </div>
     </div>
-    "", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-# ───────────────────────────────────────────────────────────────────
-# MAIN APPLICATION
-# ───────────────────────────────────────────────────────────────────
+
 def main():
     st.set_page_config(
         page_title="Freestyle Swimming Analyzer Pro",
@@ -1410,295 +1412,48 @@ def main():
         layout="wide",
         initial_sidebar_state="expanded"
     )
-    
-    # Inject custom CSS
+
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
-    
-    # Header
-    st.markdown(""
-    <div style="text-align: center; padding: 20px 0;">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-            <span style="font-size: 40px;">🏊</span>
-            <h1 style="margin: 0; font-size: 36px; 
-                       background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
-                       -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+
+    st.markdown("""
+    <div style="text-align:center;padding:20px 0;">
+        <div style="display:flex;justify-content:center;gap:12px;">
+            <span style="font-size:40px;">🏊</span>
+            <h1 style="
+                margin:0;
+                font-size:36px;
+                background:linear-gradient(135deg,#06b6d4,#3b82f6);
+                -webkit-background-clip:text;
+                -webkit-text-fill-color:transparent;
+            ">
                 Freestyle Swim Analyzer Pro
             </h1>
         </div>
-        <p style="color: #94a3b8; font-size: 16px; margin-top: 8px;">
-            AI-powered swimming technique analysis with MediaPipe pose detection
+        <p style="color:#94a3b8;">
+            AI-powered swimming technique analysis
         </p>
     </div>
-    "", unsafe_allow_html=True)
-    
-    # Sidebar settings
-    with st.sidebar:
-        st.markdown("### ⚙️ Analysis Settings")
-        
-        is_underwater = st.checkbox("🌊 Underwater footage", value=False,
-                                   help="Adjust knee angle thresholds for underwater view")
-        
-        min_confidence = st.slider(
-            "Detection confidence", 0.3, 0.9, 0.6, 0.05,
-            help="Minimum confidence for pose detection"
-        )
-        
-        smoothing_window = st.slider(
-            "Smoothing window", 3, 15, 7, 2,
-            help="Number of frames for angle smoothing"
-        )
-        
-        st.markdown("---")
-        st.markdown("### 📋 Ideal Ranges")
-        st.markdown("""
-        - **Stroke Rate:** 55-65 spm
-        - **Breathing Rate:** 25-40/min
-        - **Body Roll:** 35-55°
-        - **Leg Symmetry:** < 10°
-        """)
-        
-        st.markdown("---")
-        st.markdown("""
-        <div style="text-align: center; color: #64748b; font-size: 12px;">
-            Powered by MediaPipe & Streamlit<br>
-            v2.0 Pro Edition
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # File upload
+    """, unsafe_allow_html=True)
+
     uploaded_file = st.file_uploader(
         "Upload your swimming video",
-        type=["mp4", "mov", "avi", "mkv"],
-        help="Upload a side-view freestyle swimming video for analysis"
+        type=["mp4", "mov", "avi", "mkv"]
     )
-    
-    if uploaded_file is not None:
-        # Show preview
-        st.video(uploaded_file)
-        
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            analyze_button = st.button(
-                "🎯 Analyze Technique",
-                type="primary",
-                use_container_width=True
-            )
-        
-        if analyze_button:
-            # Save uploaded file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_in:
-                tmp_in.write(uploaded_file.read())
-                input_path = tmp_in.name
-            
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_path = tempfile.mktemp(suffix=".mp4")
-            
-            try:
-                # Initialize analyzer
-                config = AnalysisConfig(
-                    min_detection_confidence=min_confidence,
-                    smoothing_window=smoothing_window
-                )
-                analyzer = SwimAnalyzer(config, is_underwater=is_underwater)
-                
-                # Progress display
-                progress_bar = st.progress(0)
-                status_text = st.empty()
-                
-                def update_progress(p):
-                    progress_bar.progress(p)
-                    status_text.markdown(f"""
-                    <div style="text-align: center; color: #94a3b8;">
-                        <span style="font-size: 24px;">🔄</span> 
-                        Analyzing technique... {int(p*100)}%
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                # Process video
-                summary = analyzer.process_video(input_path, output_path, update_progress)
-                
-                # Clear progress
-                progress_bar.empty()
-                status_text.empty()
-                
-                st.success("✅ Analysis complete!")
-                
-                # Results display
-                st.markdown("---")
-                
-                # Score card
-                render_score_card(summary.avg_score)
-                
-                # Metrics grid
-                st.markdown("### 📊 Key Metrics")
-                cols = st.columns(4)
-                
-                with cols[0]:
-                    in_range = config.ideal_stroke_rate[0] <= summary.stroke_rate_single <= config.ideal_stroke_rate[1]
-                    render_metric_card(
-                        "Stroke Rate", 
-                        f"{summary.stroke_rate_single:.1f}/min",
-                        f"{config.ideal_stroke_rate[0]}-{config.ideal_stroke_rate[1]}",
-                        in_range,
-                        "🏃"
-                    )
-                
-                with cols[1]:
-                    in_range = config.ideal_breathing_rate[0] <= summary.breaths_per_min <= config.ideal_breathing_rate[1]
-                    render_metric_card(
-                        "Breathing Rate",
-                        f"{summary.breaths_per_min:.1f}/min",
-                        f"{config.ideal_breathing_rate[0]}-{config.ideal_breathing_rate[1]}",
-                        in_range,
-                        "💨"
-                    )
-                
-                with cols[2]:
-                    in_range = summary.avg_symmetry < config.ideal_symmetry_max
-                    render_metric_card(
-                        "Leg Symmetry",
-                        f"{summary.avg_symmetry:.1f}°",
-                        f"< {config.ideal_symmetry_max}°",
-                        in_range,
-                        "⚖️"
-                    )
-                
-                with cols[3]:
-                    in_range = config.ideal_roll_range[0] <= summary.max_roll_abs <= config.ideal_roll_range[1]
-                    render_metric_card(
-                        "Max Body Roll",
-                        f"{summary.max_roll_abs:.1f}°",
-                        f"{config.ideal_roll_range[0]}-{config.ideal_roll_range[1]}°",
-                        in_range,
-                        "🔄"
-                    )
-                
-                # Annotated video
-                st.markdown("### 🎬 Annotated Video with Pose Markers")
-                st.video(output_path)
-                render_legend()
-                
-                # Drills and Recommendations
-                col_left, col_right = st.columns(2)
-                
-                with col_left:
-                    st.markdown("### 🏋️ Training Drills")
-                    for i, drill in enumerate(summary.drills, 1):
-                        render_drill_card(drill, i)
-                
-                with col_right:
-                    st.markdown("### 💡 Recommendations")
-                    for rec in summary.recommendations:
-                        render_recommendation_card(rec)
-                
-                # Export section
-                st.markdown("---")
-                st.markdown("### 📥 Export & Download")
-                
-                with st.spinner("Preparing export files..."):
-                    csv_buf = export_to_csv(analyzer)
-                    plot_buf = generate_plots(analyzer, config)
-                    pdf_buf = generate_pdf_report(
-                        analyzer, summary, config, 
-                        uploaded_file.name, plot_buf
-                    )
-                    zip_buf = create_results_bundle(
-                        output_path, csv_buf, pdf_buf, plot_buf, timestamp
-                    )
-                
-                col1, col2, col3, col4 = st.columns(4)
-                
-                with col1:
-                    st.download_button(
-                        "📦 Full Analysis (ZIP)",
-                        zip_buf,
-                        f"swim_analysis_{timestamp}.zip",
-                        "application/zip",
-                        use_container_width=True
-                    )
-                
-                with col2:
-                    st.download_button(
-                        "📄 PDF Report",
-                        pdf_buf,
-                        f"swim_report_{timestamp}.pdf",
-                        "application/pdf",
-                        use_container_width=True
-                    )
-                
-                with col3:
-                    st.download_button(
-                        "📊 CSV Data",
-                        csv_buf,
-                        f"swim_data_{timestamp}.csv",
-                        "text/csv",
-                        use_container_width=True
-                    )
-                
-                with col4:
-                    plot_buf.seek(0)
-                    st.download_button(
-                        "📈 Charts (PNG)",
-                        plot_buf,
-                        f"swim_charts_{timestamp}.png",
-                        "image/png",
-                        use_container_width=True
-                    )
-                
-                # Show charts
-                st.markdown("### 📈 Analysis Charts")
-                plot_buf.seek(0)
-                st.image(plot_buf, use_container_width=True)
-                
-            except Exception as e:
-                st.error(f"❌ Error during analysis: {str(e)}")
-                import traceback
-                st.code(traceback.format_exc())
-            
-            finally:
-                # Cleanup
-                for p in [input_path, output_path]:
-                    if os.path.exists(p):
-                        try:
-                            os.unlink(p)
-                        except:
-                            pass
-    
-    else:
-        # Upload prompt
-        st.markdown(""
-        <div style="background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px);
-                    border-radius: 16px; padding: 40px; text-align: center;
-                    border: 2px dashed rgba(6, 182, 212, 0.5); margin-top: 20px;">
-            <div style="font-size: 48px; margin-bottom: 16px;">📤</div>
-            <h3 style="color: white; margin-bottom: 8px;">Upload Your Swimming Video</h3>
-            <p style="color: #94a3b8;">
-                Drag and drop or click to select a video file<br>
-                <span style="font-size: 12px;">Supports MP4, MOV, AVI, MKV (max 500MB)</span>
-            </p>
+
+    if uploaded_file is None:
+        st.markdown("""
+        <div style="
+            background:rgba(30,41,59,0.7);
+            border-radius:16px;
+            padding:40px;
+            text-align:center;
+            border:2px dashed #06b6d4;
+        ">
+            <div style="font-size:48px;">📤</div>
+            <h3 style="color:white;">Upload Your Swimming Video</h3>
+            <p style="color:#94a3b8;">MP4, MOV, AVI, MKV supported</p>
         </div>
-        "", unsafe_allow_html=True)
-        
-        # Feature highlights
-        st.markdown("### ✨ Features")
-        
-        cols = st.columns(3)
-        
-        features = [
-            ("🎯", "AI Pose Detection", "MediaPipe-powered body tracking with real-time skeleton overlay"),
-            ("📊", "Comprehensive Metrics", "Stroke rate, breathing patterns, body roll, and technique scoring"),
-            ("🏋️", "Personalized Drills", "Custom training recommendations based on your analysis"),
-        ]
-        
-        for col, (icon, title, desc) in zip(cols, features):
-            with col:
-                st.markdown(f""
-                <div class="metric-card">
-                    <div style="font-size: 32px; margin-bottom: 8px;">{icon}</div>
-                    <div style="color: white; font-weight: 600; font-size: 16px;">{title}</div>
-                    <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">{desc}</div>
-                </div>
-                "", unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
