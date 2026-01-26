@@ -6,6 +6,7 @@ Enhanced UI inspired by modern web design principles.
 """
 
 import streamlit as st
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 import cv2
 import numpy as np
 import mediapipe as mp
@@ -37,7 +38,7 @@ import zipfile
 # CUSTOM CSS FOR MODERN UI
 # ───────────────────────────────────────────────────────────────────
 
-CUSTOM_CSS = ""
+CUSTOM_CSS = """
 <style>
     /* Main background gradient */
     .stApp {
@@ -168,7 +169,8 @@ CUSTOM_CSS = ""
     .legend-dot-red { background: #ef4444; }
     .legend-dot-white { background: #ffffff; }
 </style>
-""
+"""
+
 
 
 # ───────────────────────────────────────────────────────────────────
